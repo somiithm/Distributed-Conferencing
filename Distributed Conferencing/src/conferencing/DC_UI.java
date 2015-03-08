@@ -9,15 +9,10 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
 
 /**
  *
@@ -108,30 +103,17 @@ public class DC_UI extends javax.swing.JFrame {
     private void submitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_submitActionPerformed
         
         String nick = this.nickname.getText();
-        String IP = null;
-        try {
-            IP = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException ex) {
-            Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
-        }
         try {
             Socket soc = new Socket("10.138.200.150",8080);
-//            BufferedReader stdIn = new BufferedReader(new InputStreamReader(soc.getInputStream()));
-//            String line = stdIn.readLine();
-//            System.out.println(line);
-//            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(soc.getOutputStream()));
-//            bw.write(nick + " " + IP );
-//            bw.flush();
-            ObjectOutputStream out = new ObjectOutputStream(soc.getOutputStream());
-            out.flush();
-            ObjectInputStream in = new ObjectInputStream(soc.getInputStream());
-            String message = (String)in.readObject();
-            System.out.println(message);
+            BufferedReader stdIn = new BufferedReader(new InputStreamReader(soc.getInputStream()));
+            String line = stdIn.readLine();
+            System.out.println(line);
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(soc.getOutputStream()));
+            bw.write(nick + "\n" );
+            bw.flush();
         } catch (IOException ex) {
             Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        } 
     }//GEN-LAST:event_submitActionPerformed
 
     /**

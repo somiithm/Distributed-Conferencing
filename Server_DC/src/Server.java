@@ -31,25 +31,21 @@ public class Server {
         while(run){
             System.out.println("wait for client");
             Socket clientSocket = serverSocket.accept();
+            HandShake(clientSocket);
             System.out.println(clientSocket.getInetAddress().toString());           
         }
     }        
 
     private static void HandShake(Socket clientSocket) throws IOException
     {
-//        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-//        bw.write("welcome");
-//        bw.flush();
-//        bw.close();
-        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-        out.flush();
-        ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
-        out.writeObject("welcome");
-//        try {
-//            String message = (String)in.readObject();
-//            System.out.println("Nick: " + message);
-//        } catch (ClassNotFoundException ex) {
-//            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+        bw.write("welcome\n");
+        bw.flush();
+        BufferedReader br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        String nick = br.readLine();
+        System.out.println(nick);
+        
+        //TODO: Send global list of users
+        
     }    
 }
