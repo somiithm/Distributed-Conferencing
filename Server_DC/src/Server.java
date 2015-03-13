@@ -7,8 +7,12 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,27 +27,71 @@ import java.util.logging.Logger;
  * @author Administrator
  */
 public class Server {
+    HashMap mapping;
     
     public static void main(String args[]) throws IOException{
+        Server serv = new Server();
+        serv.mapping = new HashMap();
         int portNumber = 8080;
         boolean run = true;
         ServerSocket serverSocket = new ServerSocket(portNumber);
+        
+        /*Printing the Server IP addresses*/
+        System.out.println("Printing the IP addresses :");
+        Enumeration e = NetworkInterface.getNetworkInterfaces();
+        while(e.hasMoreElements())
+        {
+            NetworkInterface n = (NetworkInterface) e.nextElement();
+            Enumeration ee = n.getInetAddresses();
+            while (ee.hasMoreElements())
+            {
+                InetAddress i = (InetAddress) ee.nextElement();
+                System.out.println(i.getHostAddress());
+            }
+        }
+        
         while(run){
-            System.out.println("wait for client");
+            System.out.println("waiting for client");
             Socket clientSocket = serverSocket.accept();
-            HandShake(clientSocket);
+            System.out.println("Koi aaya!");
+            serv.readCommand(clientSocket);
             System.out.println(clientSocket.getInetAddress().toString());           
         }
-    }        
+    }
 
-    private static void HandShake(Socket clientSocket) throws IOException
+    private void readCommand(Socket clientSocket) throws IOException
     {
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-        bw.write("welcome\n");
-        bw.flush();
         BufferedReader br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        String nick = br.readLine();
-        System.out.println(nick);
+        
+        String input = br.readLine();
+        System.out.println(input + ";");
+        switch(input.charAt(0))
+        {
+            case 'N':           // new nickname
+                String nick = input.substring(1);
+                if(this.mapping.containsKey(nick))
+                {
+                    // username already used
+                    bw.write("NAK\n");
+                    bw.flush();
+                }
+                else
+                {
+                    // add the username
+                    this.mapping.put(nick, clientSocket.getInetAddress());
+                    bw.write("ACK\n");
+                    bw.flush();
+                }
+                break;
+            case 'C':           // change nickname
+                
+                break;
+            case 'R':           // refresh the list
+                // Server has to send the whole mapping of users along with the IPs
+                
+                break;
+        }
         
         //TODO: Send global list of users
         
