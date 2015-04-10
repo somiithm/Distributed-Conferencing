@@ -3,13 +3,10 @@ package conferencing;
 import static conferencing.DC_UI.map;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -47,6 +44,7 @@ public class Conference_Manager
 	private void init_components()
 	{
 		ui = new Conference_Panel();
+		System.out.println("Adding a new conference named :"+name);
 		this.Main.tabbed_pane.add(name,ui);
 		ui.exit_btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt)
@@ -63,9 +61,9 @@ public class Conference_Manager
 		for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
 			// create a socke and send message
 			Socket soc = new Socket((InetAddress) entry.getValue(),DC_UI.req_port);
-			DataOutputStream dw = new DataOutputStream(soc.getOutputStream());
-			dw.writeUTF("I"+name);
-			dw.flush();
+			ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+			oos.writeUTF("I"+name);
+			oos.flush();
 //			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
 		}
 	}
@@ -89,6 +87,7 @@ public class Conference_Manager
 		this.port = port;
 		this.map = map;
 		this.peers = new HashMap<String,Inet4Address>();
+		this.name = name;
 		init_components();
 		// add self to the peers list as initialization
 		peers.put(user,map.get(user));

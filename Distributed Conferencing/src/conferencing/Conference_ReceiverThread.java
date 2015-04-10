@@ -5,9 +5,8 @@
  */
 package conferencing;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Inet4Address;
 import java.net.ServerSocket;
@@ -31,11 +30,11 @@ public class Conference_ReceiverThread extends Thread
 	
 	private void handleMessage(Socket sock) throws IOException
 	{
-		DataOutputStream dw = new DataOutputStream(sock.getOutputStream());
-		DataInputStream dr = new DataInputStream(sock.getInputStream());
-		ObjectOutputStream ow = new ObjectOutputStream(sock.getOutputStream());
+//		DataOutputStream dw = new DataOutputStream(sock.getOutputStream());
+		ObjectInputStream ois = new ObjectInputStream(sock.getInputStream());
+		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
 		//read the message
-		String message = dr.readUTF();
+		String message = ois.readUTF();
 		System.out.println("Received :"+message);
 		String name;
 		switch(message.charAt(0))
@@ -44,10 +43,10 @@ public class Conference_ReceiverThread extends Thread
 				this.counter++;
 				// acknowledgement received join
 				// send the list of peers to the new guy
-				dw.writeInt(conf.port);
-				dw.flush();
-				ow.writeObject(conf.peers);
-				ow.flush();
+				oos.writeInt(conf.port);
+				oos.flush();
+				oos.writeObject(conf.peers);
+				oos.flush();
 				break;
 			case 'R':
 				this.counter++;
@@ -59,6 +58,7 @@ public class Conference_ReceiverThread extends Thread
 				// Add peer request
 				name = message.substring(1);
 				conf.peers.put(name, (Inet4Address) sock.getInetAddress());
+				conf.update_peers_list();
 				break;
 		}
 	}

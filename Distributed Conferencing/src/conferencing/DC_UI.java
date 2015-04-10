@@ -7,12 +7,9 @@ package conferencing;
 
 import static com.sun.org.apache.xalan.internal.lib.ExsltDynamic.map;
 import java.awt.Font;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
-import java.io.OutputStreamWriter;
+import java.io.ObjectOutputStream;
 import java.net.Inet4Address;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -34,8 +31,9 @@ public class DC_UI extends javax.swing.JFrame {
 	/*Global Variables*/
 	public static Font ui_font;
 	public static int req_port = 8000;
-	public String server_ip = "10.138.52.215";
-	public int server_port = 8000;
+//	public String server_ip = "10.138.52.215";
+	public String server_ip = "10.132.141.216";
+	public int server_port = 8888;
 	public String nick_error1;
 	public String nick_error2;
 	public String nick_error3;
@@ -387,12 +385,11 @@ public class DC_UI extends javax.swing.JFrame {
 		try 
 		{
 			soc = new Socket(server_ip,server_port);
-			DataOutputStream dw = new DataOutputStream(soc.getOutputStream());
-			DataInputStream din = new DataInputStream(soc.getInputStream());
-                        ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
-			dw.writeUTF("N" + nick);
-			dw.flush();
-			String line = din.readUTF();
+			ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+            ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
+			oos.writeUTF("N" + nick);
+			oos.flush();
+			String line = ois.readUTF();
 			System.out.println("Line is :"+line);
 			if(line.equals("N"))
 			{
@@ -435,19 +432,19 @@ public class DC_UI extends javax.swing.JFrame {
 		// TODO add your handling code here:
 		String send = "R"+ this.nick;
 
-		ObjectInputStream ois;
 		try {
-			Socket soc = new Socket("10.138.52.215",8000);
-			DataOutputStream dw = new DataOutputStream(soc.getOutputStream());
-			dw.writeUTF(send);
-			dw.flush();
-			ois = new ObjectInputStream(soc.getInputStream());
+			Socket soc = new Socket(server_ip,server_port);
+			ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+			oos.writeUTF(send);
+			oos.flush();
+			ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
 			map = new HashMap<String,Inet4Address>();            
 			map = (Map<String, Inet4Address>) ois.readObject();
 			DefaultListModel model = new DefaultListModel();                             
 			int i = 0;
 			for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
-				model.addElement(entry.getKey());
+				if(!nick.equals(entry.getKey()))
+					model.addElement(entry.getKey());
 				System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
 			}
 			this.user_list.setModel(model);                
@@ -461,15 +458,15 @@ public class DC_UI extends javax.swing.JFrame {
 	private int get_port_from_server(String name) throws IOException
 	{
 		Socket soc = new Socket(server_ip,server_port);
-		DataOutputStream dw = new DataOutputStream(soc.getOutputStream());
-		DataInputStream din = new DataInputStream(soc.getInputStream());
+		ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+		ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
 //		BufferedReader br = new BufferedReader(new InputStreamReader(soc.getInputStream()));
 //		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(soc.getOutputStream()));
-		dw.writeUTF("C" + name);
-		dw.flush();
+		oos.writeUTF("C" + name);
+		oos.flush();
 		System.out.println("Just Before read!!");
-		System.out.println("kuch :"+din.readInt());
-		return din.readInt();
+		System.out.println("kuch :"+ois.readInt());
+		return ois.readInt();
 	}
 	private void create_group_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_create_group_btnActionPerformed
 		// get list of selected users
@@ -493,7 +490,8 @@ public class DC_UI extends javax.swing.JFrame {
 		while(true)
 		{
 			name = JOptionPane.showInputDialog(this, "Give a conference name","New Conference", JOptionPane.QUESTION_MESSAGE);
-			if(!name.isEmpty())
+			System.out.println("Name inputted :" + name);
+			if(name != null && !name.isEmpty())
 				break;
 		}
 		
@@ -561,24 +559,23 @@ public class DC_UI extends javax.swing.JFrame {
 
 public static void handleRequest(Socket sock) throws IOException, ClassNotFoundException
 {
-	DataOutputStream dw = new DataOutputStream(sock.getOutputStream());
-	DataInputStream dr = new DataInputStream(sock.getInputStream());
+	ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
 	ObjectInputStream ois = new ObjectInputStream(sock.getInputStream());
 	//read request form socket
-	String request = dr.readUTF();
+	String request = ois.readUTF();
 	String conference = request.substring(1);
-	if(JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Do you want to join conference "+conference,"Conference Join Request",JOptionPane.QUESTION_MESSAGE))
+	if(JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Do you want to join conference "+conference,"Conference Join Request",JOptionPane.YES_NO_OPTION))
 	{
 		// send accept
-		dw.writeUTF("A");
-		int port = dr.readInt();
+		oos.writeUTF("A");
+		int port = ois.readInt();
 		Map<String,Inet4Address> peers = (Map<String,Inet4Address>) ois.readObject();
 		// iterate on map and send peer request to everyone
 		for (Map.Entry<String, Inet4Address> entry : peers.entrySet())
 		{
 			Socket new_sock = new Socket(entry.getValue(),port);
-			DataOutputStream dw1 = new DataOutputStream(new_sock.getOutputStream());
-			dw1.writeUTF("P"+nick);
+			ObjectOutputStream oos1 = new ObjectOutputStream(new_sock.getOutputStream());
+			oos1.writeUTF("P"+nick);
 //			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
 		}
 		// create a new conference manager
@@ -589,7 +586,7 @@ public static void handleRequest(Socket sock) throws IOException, ClassNotFoundE
 	else
 	{
 		// send reject
-		dw.writeUTF("R");
+		oos.writeUTF("R");
 	}
 }
 	
