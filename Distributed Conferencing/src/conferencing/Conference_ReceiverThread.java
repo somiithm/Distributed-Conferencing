@@ -78,23 +78,14 @@ public class Conference_ReceiverThread extends Thread
 			// Create a server socket that listens on the port
 			ServerSocket serverSocket = new ServerSocket(conf.port);
 			// read messages in while 1
-			while(conf.flag)
+			while(true)
 			{
 				Socket clientSocket = serverSocket.accept();
 				this.handleMessage(clientSocket);
 			}
-			serverSocket.close();
-			while(true)
-			{
-				sleep(1000000);
-			}
 		}
 		catch (IOException ex) {
 			Logger.getLogger(Conference_ReceiverThread.class.getName()).log(Level.SEVERE, null, ex);
-		}
-		catch (InterruptedException ex) {
-			Logger.getLogger(Conference_ReceiverThread.class.getName()).
-				log(Level.SEVERE, null, ex);
 		}
 	}
 }
