@@ -32,8 +32,8 @@ public class DC_UI extends javax.swing.JFrame {
 	/*Global Variables*/
 	public static Font ui_font;
 	public static int req_port = 8000;
-//	public String server_ip = "10.138.52.215";
-	public String server_ip = "10.132.141.216";
+	public String server_ip = "10.138.52.215";
+	//public String server_ip = "10.132.141.216";
 	public int server_port = 8888;
 	public String nick_error1;
 	public String nick_error2;
@@ -618,7 +618,7 @@ public class DC_UI extends javax.swing.JFrame {
 
 					while (ee.hasMoreElements()) {
 						InetAddress i = (InetAddress) ee.nextElement();
-						if (k == 3) {
+						if (k == 2) {
 							myaddress = (Inet4Address) i;
 						}
 						System.out.println(i.getHostAddress());

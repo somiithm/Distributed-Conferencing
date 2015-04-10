@@ -22,10 +22,12 @@ public class Conference_ReceiverThread extends Thread
 {
 	Conference_Manager conf;
 	int counter;
+        ObjectInputStream ois;
+        ObjectOutputStream oos;
 	public Conference_ReceiverThread(Conference_Manager conf)
 	{
 		this.conf = conf;
-		this.counter = 0;
+		this.counter = 0;                
 	}
 	
 	private void handleMessage(Socket sock) throws IOException
@@ -43,8 +45,8 @@ public class Conference_ReceiverThread extends Thread
 				this.counter++;
 				// acknowledgement received join
 				// send the list of peers to the new guy
-				oos.writeInt(conf.port);
-				oos.flush();
+//				oos.writeInt(conf.port);
+//				oos.flush();
 				oos.writeObject(conf.peers);
 				oos.flush();
 				break;
@@ -60,6 +62,11 @@ public class Conference_ReceiverThread extends Thread
 				conf.peers.put(name, (Inet4Address) sock.getInetAddress());
 				conf.update_peers_list();
 				break;
+                        case 'M':
+                            //display message
+                            String msg = message.substring(1);
+                            conf.ui.conf_text_area.append(msg+"\n");
+                            break;
 		}
 	}
 	public void run()

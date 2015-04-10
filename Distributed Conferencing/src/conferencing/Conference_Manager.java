@@ -3,6 +3,7 @@ package conferencing;
 import static conferencing.DC_UI.map;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -12,9 +13,13 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
@@ -53,6 +58,31 @@ public class Conference_Manager
 				delete_conference();
 			}
 		});
+                ui.send_btn.addActionListener(new ActionListener() {
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        for (Map.Entry<String, Inet4Address> entry : peers.entrySet()) {				
+                            String msg = ui.chat_text_area.getText();
+                            try {
+                                Socket soc = new Socket(entry.getValue(),port);
+                                ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+                                Date date = new Date();
+                                Calendar cal = Calendar.getInstance();
+                                cal.setTime(date);
+                                int hours = cal.get(Calendar.HOUR_OF_DAY);
+                                int min = cal.get(Calendar.MINUTE);                                
+                                oos.writeUTF("M"+hours+":"+min+":>"+user+": "+msg);
+                                oos.flush();                                
+                            } catch (IOException ex) {
+                                Logger.getLogger(Conference_Manager.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
+                        ui.chat_text_area.setText("");
+                    }                    
+                });
+	
+
 	}
 	
 	private void send_requests() throws IOException
