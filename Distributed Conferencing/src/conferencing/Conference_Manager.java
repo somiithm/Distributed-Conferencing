@@ -57,8 +57,12 @@ public class Conference_Manager
 			{
 				try {
 					// event handling function
+                                    		// ask wanna really exit
+                                    if (JOptionPane.showConfirmDialog(null, "Do you really wanna quit this Conference?", "Exit Conference",JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
+                                    {   
 					delete_conference();
-				}
+                                    }
+                                }
 				catch (IOException ex) {
 					Logger.getLogger(Conference_Manager.class.getName()).
 						log(Level.SEVERE, null, ex);
@@ -180,20 +184,13 @@ public class Conference_Manager
 	}
 	public void delete_conference() throws IOException
 	{
-		// ask wanna really exit
-		if (JOptionPane.showConfirmDialog(null, "Do you really wanna quit this Conference?", "Exit Conference",JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
-		{
-			flag = false;
-			// yes option
-			this.leave();
-			this.remove_From_Main_Server();
-			Main.tabbed_pane.remove(ui);
-			Main.remove_conference(this);
-		}
-		else 
-		{
-			// no option
-		}
+
+            flag = false;
+            // yes option
+            this.leave();
+            this.remove_From_Main_Server();
+            Main.tabbed_pane.remove(ui);
+            Main.remove_conference(this);
 	}
 	
 

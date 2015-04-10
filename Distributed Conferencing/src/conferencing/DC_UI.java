@@ -373,7 +373,27 @@ public class DC_UI extends javax.swing.JFrame {
 		this.pack();
 	}
 	private void close_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_close_btnActionPerformed
-		System.exit(0);
+		
+            // remove user from all conferences
+            
+            for(Conference_Manager s: this.conferences) {
+                try {
+                    s.delete_conference();
+                } catch (IOException ex) {
+                    Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            try {
+                // remove user from server
+                Socket deleteSoc = new Socket(server_ip, server_port);
+                ObjectOutputStream oos = new ObjectOutputStream(deleteSoc.getOutputStream());
+                oos.writeUTF("D"+nick);
+                oos.flush();
+            } catch (IOException ex) {
+                Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            System.exit(0);
 	}//GEN-LAST:event_close_btnActionPerformed
 
 	private void submit_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_submit_btnActionPerformed

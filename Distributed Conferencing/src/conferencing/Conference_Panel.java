@@ -44,7 +44,7 @@ public class Conference_Panel extends javax.swing.JPanel {
 
         send_btn.setIcon(new javax.swing.ImageIcon(getClass().getResource("/conferencing/send_icon.png"))); // NOI18N
         send_btn.setToolTipText("Send");
-
+        
         chat_text_area.setColumns(20);
         chat_text_area.setFont(DC_UI.ui_font);
         chat_text_area.setLineWrap(true);
