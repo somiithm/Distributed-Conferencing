@@ -7,8 +7,8 @@ package conferencing;
 
 import static com.sun.org.apache.xalan.internal.lib.ExsltDynamic.map;
 import java.awt.Font;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -22,6 +22,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
+import java.net.*;
 
 /**
  *
@@ -31,16 +33,20 @@ public class DC_UI extends javax.swing.JFrame {
 
 	/*Global Variables*/
 	public static Font ui_font;
+	public static int req_port = 8000;
+	public String server_ip = "10.138.52.215";
+	public int server_port = 8000;
 	public String nick_error1;
 	public String nick_error2;
 	public String nick_error3;
 	public String nick_error4;
-        public Map<String,Inet4Address> map;
+	public String nick;
+    static public Map<String,Inet4Address> map;
+	static public Inet4Address ip;
 	/**
 	 * Creates new form DC_UI
 	 */
-	String ServerIP;
-	ArrayList<Conference_Manager> conferences;
+	static ArrayList<Conference_Manager> conferences;
 	public DC_UI() {
 		this.nick_error1 = "* No Nickname given";
 		this.nick_error2 = "* Nickname should be within 25 characters";
@@ -353,10 +359,10 @@ public class DC_UI extends javax.swing.JFrame {
 
 	private void submit_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_submit_btnActionPerformed
 
-		String nick = this.nickname_text_field.getText();
-		
+		nick = this.nickname_text_field.getText();
+		Socket soc;
 		// testing
-		this.start_work();
+		
 		//System.out.println("Nick : " + nick + ";");
 		if(nick.isEmpty())
 		{
@@ -376,54 +382,131 @@ public class DC_UI extends javax.swing.JFrame {
 			this.nick_error_label.setText(this.nick_error3);
 			return;
 		}
-		try {
-			Socket soc = new Socket("10.138.52.215",8888);
-			BufferedReader stdIn = new BufferedReader(new InputStreamReader(soc.getInputStream()));
-			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(soc.getOutputStream()));
+		try 
+		{
+			soc = new Socket(server_ip,server_port);
+			DataOutputStream dw = new DataOutputStream(soc.getOutputStream());
+			DataInputStream din = new DataInputStream(soc.getInputStream());
                         ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
-			bw.write("N" + nick + "\n" );
-			bw.flush();
-			String line = stdIn.readLine();
-                        System.out.println();
-			if(line.equals("NAK"))
+			dw.writeUTF("N" + nick);
+			dw.flush();
+			String line = din.readUTF();
+			System.out.println("Line is :"+line);
+			if(line.equals("N"))
 			{
 				// Reject
-				this.nick_error_label.setText(this.nick_error4);
+//				this.nick_error_label.setText(this.nick_error4);
+				JOptionPane.showMessageDialog(this, "Choose a different username", "Username already taken", JOptionPane.ERROR_MESSAGE);
+				this.nickname_text_field.setText("");
 				return;
 			}
 			else
 			{
 				// Accepted
 				this.nick_error_label.setText("");
-                                
-                                map = new HashMap<String,Inet4Address>();
-                                map = (Map<String, Inet4Address>) ois.readObject();
-                                DefaultListModel model = new DefaultListModel();                             
-                                
-                                
-                                int i = 0;
-                                for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
-                                    model.addElement(entry.getKey());
-                                    System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
-                                }
-                                this.user_list.setModel(model);
+
+				map = new HashMap<String,Inet4Address>();
+				map = (Map<String, Inet4Address>) ois.readObject();
+				DefaultListModel model = new DefaultListModel();                             
+
+
+				int i = 0;
+				for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
+					if(!nick.equals(entry.getKey()))
+						model.addElement(entry.getKey());
+					System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+				}
+				this.user_list.setModel(model);			
+				this.start_work();
 			}
+			soc.close();
 		} catch (IOException ex) {
 			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
 		} catch (ClassNotFoundException ex) {
-                Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
-            }
+			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
+		}
 		System.out.println("Registered!");
 	}//GEN-LAST:event_submit_btnActionPerformed
 
 	private void refresh_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_refresh_btnActionPerformed
 		// TODO add your handling code here:
-	}//GEN-LAST:event_refresh_btnActionPerformed
+		String send = "R"+ this.nick;
 
+		ObjectInputStream ois;
+		try {
+			Socket soc = new Socket("10.138.52.215",8000);
+			DataOutputStream dw = new DataOutputStream(soc.getOutputStream());
+			dw.writeUTF(send);
+			dw.flush();
+			ois = new ObjectInputStream(soc.getInputStream());
+			map = new HashMap<String,Inet4Address>();            
+			map = (Map<String, Inet4Address>) ois.readObject();
+			DefaultListModel model = new DefaultListModel();                             
+			int i = 0;
+			for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
+				model.addElement(entry.getKey());
+				System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+			}
+			this.user_list.setModel(model);                
+		} catch (IOException ex) {
+			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
+		} catch (ClassNotFoundException ex) {
+			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
+		}
+	}//GEN-LAST:event_refresh_btnActionPerformed
+	
+	private int get_port_from_server(String name) throws IOException
+	{
+		Socket soc = new Socket(server_ip,server_port);
+		DataOutputStream dw = new DataOutputStream(soc.getOutputStream());
+		DataInputStream din = new DataInputStream(soc.getInputStream());
+//		BufferedReader br = new BufferedReader(new InputStreamReader(soc.getInputStream()));
+//		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(soc.getOutputStream()));
+		dw.writeUTF("C" + name);
+		dw.flush();
+		System.out.println("Just Before read!!");
+		System.out.println("kuch :"+din.readInt());
+		return din.readInt();
+	}
 	private void create_group_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_create_group_btnActionPerformed
-		// add a new conference panel to the tabs
-		conferences.add(new Conference_Manager(this));
-		//this.tabbed_pane.add(new Conference_Panel());
+		// get list of selected users
+		// Get the index of all the selected items
+		Map<String,Inet4Address> mp = new HashMap<String,Inet4Address>();
+		int[] selectedIx = this.user_list.getSelectedIndices();
+		if(selectedIx.length == 0)
+		{
+			// no user selected
+			JOptionPane.showMessageDialog(this, "No user selected", "Conference Creation Error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		// Get all the selected items using the indices
+		for (int i = 0; i < selectedIx.length; i++)
+		{
+			String sel = (String) this.user_list.getModel().getElementAt(selectedIx[i]);
+			mp.put(sel, map.get(sel));
+		}
+		// ask for conference name
+		String name;
+		while(true)
+		{
+			name = JOptionPane.showInputDialog(this, "Give a conference name","New Conference", JOptionPane.QUESTION_MESSAGE);
+			if(!name.isEmpty())
+				break;
+		}
+		
+		// ask server for a new conference port
+		int port = 10000;
+		try 
+		{
+			port = get_port_from_server(name);
+			System.out.println("Server Gave port : " + port);
+			// add a new conference panel to the tabs
+			conferences.add(new Conference_Manager(this,port,name,mp));
+		}
+		catch (IOException ex)
+		{
+			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
+		}
 	}//GEN-LAST:event_create_group_btnActionPerformed
 	
 	public void remove_conference(Conference_Manager c)
@@ -433,7 +516,7 @@ public class DC_UI extends javax.swing.JFrame {
 	/**
 	 * @param args the command line arguments
 	 */
-	public static void main(String args[]) {
+	public static void main(String args[]) throws IOException {
 		/* Set the Nimbus look and feel */
 		//<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
 		/* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -456,13 +539,21 @@ public class DC_UI extends javax.swing.JFrame {
 			java.util.logging.Logger.getLogger(DC_UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
 		}
 		//</editor-fold>
-
+		DC_UI ui = new DC_UI();
 		/* Create and display the form */
 		java.awt.EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				new DC_UI().setVisible(true);
 			}
 		});
+		
+		// start the server that listens for new conference request
+		ServerSocket serverSocket = new ServerSocket(DC_UI.req_port);
+		while(true){
+            System.out.println("waiting for conference");
+            Socket clientSocket = serverSocket.accept();
+//            handlerequest(clientSocket);
+        }
 	}
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
