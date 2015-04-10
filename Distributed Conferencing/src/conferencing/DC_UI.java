@@ -32,9 +32,9 @@ public class DC_UI extends javax.swing.JFrame {
 	/*Global Variables*/
 	public static Font ui_font;
 	public static int req_port = 8000;
-	public String server_ip = "10.138.52.215";
-	//public String server_ip = "10.132.141.216";
-	public int server_port = 8888;
+//	public String server_ip = "10.138.52.215";
+	public static String server_ip = "10.132.141.216";
+	public static int server_port = 8888;
 	public String nick_error1;
 	public String nick_error2;
 	public String nick_error3;
@@ -189,6 +189,22 @@ public class DC_UI extends javax.swing.JFrame {
 
         join_group_btn.setFont(DC_UI.ui_font);
         join_group_btn.setText("Join Conference");
+        join_group_btn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                try
+                {
+                    join_group_btnActionPerformed(evt);
+                }
+                catch(IOException e)
+                {
+                    // do nothing
+                }
+                catch(ClassNotFoundException e)
+                {
+                    // do nothing
+                }
+            }
+        });
 
         javax.swing.GroupLayout selector_panelLayout = new javax.swing.GroupLayout(selector_panel);
         selector_panel.setLayout(selector_panelLayout);
@@ -408,16 +424,19 @@ public class DC_UI extends javax.swing.JFrame {
 				map = (Map<String, Inet4Address>) ois.readObject();
 				conf_list = (Map<String, Integer>) ois.readObject();
 				DefaultListModel model = new DefaultListModel();
-
-				int i = 0;
 				for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
 					if (!nick.equals(entry.getKey())) {
 						model.addElement(entry.getKey());
 					}
-					System.out.println("Key = " + entry.getKey() + ", Value = "
-						+ entry.getValue());
+					System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
 				}
 				this.user_list.setModel(model);
+				model = new DefaultListModel();
+				for (Map.Entry<String, Integer> entry : conf_list.entrySet()) {
+					model.addElement(entry.getKey());
+//					System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
+				}
+				this.conference_list.setModel(model);
 				this.start_work();
 			}
 			soc.close();
@@ -437,23 +456,26 @@ public class DC_UI extends javax.swing.JFrame {
 
 		try {
 			Socket soc = new Socket(server_ip, server_port);
-			ObjectOutputStream oos = new ObjectOutputStream(soc.
-				getOutputStream());
+			ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+			ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
 			oos.writeUTF(send);
 			oos.flush();
-			ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
-			map = new HashMap<String, Inet4Address>();
 			map = (Map<String, Inet4Address>) ois.readObject();
+			conf_list = (Map<String, Integer>) ois.readObject();
 			DefaultListModel model = new DefaultListModel();
-			int i = 0;
 			for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
 				if (!nick.equals(entry.getKey())) {
 					model.addElement(entry.getKey());
 				}
-				System.out.println("Key = " + entry.getKey() + ", Value = "
-					+ entry.getValue());
+				System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
 			}
 			this.user_list.setModel(model);
+			model = new DefaultListModel();
+			for (Map.Entry<String, Integer> entry : conf_list.entrySet()) {
+				model.addElement(entry.getKey());
+//					System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
+			}
+			this.conference_list.setModel(model);
 		}
 		catch (IOException ex) {
 			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
@@ -474,6 +496,47 @@ public class DC_UI extends javax.swing.JFrame {
 		System.out.println("Just Before read!!");
 		//System.out.println("kuch :"+ois.readInt());
 		return ois.readInt();
+	}
+
+    private void join_group_btnActionPerformed(java.awt.event.ActionEvent evt) throws IOException, ClassNotFoundException {
+		String conf_name = (String)this.conference_list.getSelectedValue();
+		int port = conf_list.get(conf_name);
+		// Send server a join message
+		Socket soc = new Socket(server_ip, server_port);
+		ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+		ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
+		oos.writeUTF("A"+conf_name);
+		map = (Map<String, Inet4Address>) ois.readObject();
+		ArrayList<String> peers = (ArrayList<String>) ois.readObject();
+		DefaultListModel model = new DefaultListModel();
+		for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
+			if (!nick.equals(entry.getKey())) {
+				model.addElement(entry.getKey());
+			}
+			else
+			{
+				ip = entry.getValue();
+			}
+			System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
+		}
+		
+		this.user_list.setModel(model);
+		// Send P to all the peers in the Conference, Create a new Conference Manager and update the peers map
+		Map<String, Inet4Address> mp = new HashMap<String, Inet4Address>();
+		for(String peer : peers)
+		{
+			mp.put(peer, map.get(peer));
+			Socket new_sock = new Socket(map.get(peer), port);
+			ObjectOutputStream oos2 = new ObjectOutputStream(new_sock.getOutputStream());
+			oos2.writeUTF("P" + nick);
+			oos2.flush();
+		}
+		// create a new conference manager
+		mp.put(nick, ip);
+		Conference_Manager temp = new Conference_Manager(ui, port, nick,conf_name);
+		temp.peers = mp;
+		temp.update_peers_list();
+		this.conferences.add(temp);
 	}
 	private void create_group_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_create_group_btnActionPerformed
 		// get list of selected users
@@ -574,8 +637,8 @@ public class DC_UI extends javax.swing.JFrame {
 		}
 	}
 
-	public static void handleRequest(Socket sock) throws IOException,
-		ClassNotFoundException {
+	public static void handleRequest(Socket sock) throws IOException,ClassNotFoundException {
+		
 		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
 		ObjectInputStream ois = new ObjectInputStream(sock.getInputStream());
 		//read request form socket
@@ -609,24 +672,7 @@ public class DC_UI extends javax.swing.JFrame {
 					System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
 				}
 				// create a new conference manager
-				Enumeration e = NetworkInterface.getNetworkInterfaces();
-				InetAddress myaddress = InetAddress.getLocalHost();
-				int k = 0;
-				while (e.hasMoreElements()) {
-					NetworkInterface n = (NetworkInterface) e.nextElement();
-					Enumeration ee = n.getInetAddresses();
-
-					while (ee.hasMoreElements()) {
-						InetAddress i = (InetAddress) ee.nextElement();
-						if (k == 2) {
-							myaddress = (Inet4Address) i;
-						}
-						System.out.println(i.getHostAddress());
-						k++;
-					}
-				}
-				System.out.println("My address is : " + myaddress);
-				peers.put(nick, (Inet4Address) myaddress);
+				peers.put(nick, ip);
 				Conference_Manager temp = new Conference_Manager(ui, port, nick,conference);
 				temp.peers = peers;
 				temp.update_peers_list();

@@ -1,9 +1,7 @@
 package conferencing;
 
-import static conferencing.DC_UI.map;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -54,12 +52,18 @@ public class Conference_Manager
 		ui.exit_btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt)
 			{
-				// event handling function
-				delete_conference();
+				try {
+					// event handling function
+					delete_conference();
+				}
+				catch (IOException ex) {
+					Logger.getLogger(Conference_Manager.class.getName()).
+						log(Level.SEVERE, null, ex);
+				}
 			}
 		});
-                ui.send_btn.addActionListener(new ActionListener() {
-
+		
+					ui.send_btn.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         for (Map.Entry<String, Inet4Address> entry : peers.entrySet()) {				
@@ -81,8 +85,6 @@ public class Conference_Manager
                         ui.chat_text_area.setText("");
                     }                    
                 });
-	
-
 	}
 	
 	private void send_requests() throws IOException
@@ -99,7 +101,21 @@ public class Conference_Manager
 //			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
 		}
 	}
-	Conference_Manager(DC_UI Main,int port,String user,String name)
+	private void add_To_Main_Server() throws IOException
+	{
+		Socket soc = new Socket(DC_UI.server_ip, DC_UI.server_port);
+		ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+		oos.writeUTF("A"+name+":"+user);
+		soc.close();
+	}
+	private void remove_From_Main_Server() throws IOException
+	{
+		Socket soc = new Socket(DC_UI.server_ip, DC_UI.server_port);
+		ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+		oos.writeUTF("E"+name+":"+user);
+		soc.close();
+	}
+	Conference_Manager(DC_UI Main,int port,String user,String name) throws IOException
 	{
 		this.Main = Main;
 		this.port = port;
@@ -111,6 +127,7 @@ public class Conference_Manager
 		this.receiver = new Conference_ReceiverThread(this);
 		this.receiver.start();
 		// Initialize the list of sockets
+		this.add_To_Main_Server();
 	}
 	
 	Conference_Manager(DC_UI Main,int port,String user,String name,Map<String,Inet4Address> map) throws IOException
@@ -127,6 +144,7 @@ public class Conference_Manager
 		this.receiver = new Conference_ReceiverThread(this);
 		this.receiver.start();
 		send_requests();
+		this.add_To_Main_Server();
 	}
 	
 	// function that updates the UI
@@ -140,16 +158,25 @@ public class Conference_Manager
 		}
 		this.ui.peer_list.setModel(model);
 	}
-	public void leave()
+	public void leave() throws IOException
 	{
-		
+		// Send remove request to all peers
+		for (Map.Entry<String, Inet4Address> entry : peers.entrySet()) {
+			Socket new_sock = new Socket(entry.getValue(), port);
+			ObjectOutputStream oos2 = new ObjectOutputStream(new_sock.getOutputStream());
+			oos2.writeUTF("E" + user);
+			oos2.flush();
+//			System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
+		}
 	}
-	public void delete_conference()
+	public void delete_conference() throws IOException
 	{
 		// ask wanna really exit
 		if (JOptionPane.showConfirmDialog(null, "Do you really wanna quit this Conference?", "Exit Conference",JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) 
 		{
 			// yes option
+			this.leave();
+			this.remove_From_Main_Server();
 			Main.tabbed_pane.remove(ui);
 			Main.remove_conference(this);
 		}

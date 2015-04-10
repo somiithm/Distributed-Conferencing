@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +31,7 @@ import java.util.logging.Logger;
 public class Server {
     public HashMap mapping;
     public Map<String,Integer> conf_list;
+	public Map<String,ArrayList<String> > conf_members;
     public int Conf_ID = 10000;
     public static int portNumber = 8888;
     public Server()
@@ -73,6 +75,7 @@ public class Server {
         //BufferedReader br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         
         String input = ois.readUTF();
+		String ConfName,UserName;
         System.out.println(input + ";");
         switch(input.charAt(0))
         {
@@ -98,19 +101,39 @@ public class Server {
                 }
                 break;
             case 'C':       //Create Conference
-                
-                String ConfName = input.substring(1);
-                conf_list.put(ConfName, this.Conf_ID);                
+                ConfName = input.substring(1);
+                conf_list.put(ConfName, this.Conf_ID);
+				conf_members.put(ConfName, new ArrayList<String>());
                 String num = Integer.toString(Conf_ID);               
                 oos.writeInt(this.Conf_ID);
                 System.out.println(num);
                 oos.flush();
                 this.Conf_ID++;
                 break;
-            case 'J':
-                int id = (int)conf_list.get(input.substring(1));
-                oos.writeUTF(Integer.toString(id));
-                oos.flush();
+            case 'A':		// Add user to conference ConfName
+				// convention A<ConfName>:<UserName>
+                ConfName = input.substring(1,input.indexOf(":"));
+				UserName = input.substring(input.indexOf(":")+1);
+				conf_members.get(ConfName).add(UserName);
+				break;
+			case 'E':		// Exit from conference ConfName
+				// convention E<ConfName>:<UserName>
+				ConfName = input.substring(1,input.indexOf(":"));
+				UserName = input.substring(input.indexOf(":")+1);
+				conf_members.get(ConfName).remove(UserName);
+				if(conf_members.get(ConfName).isEmpty())
+				{
+					// Delete Conference From list
+					
+				}
+				break;
+			case 'J':		// Get the conference List
+				ConfName = input.substring(1);
+				// Send list of members of this conference
+				oos.writeObject(mapping);
+				oos.writeObject(conf_members.get(ConfName));
+				oos.flush();
+				break;
             case 'R':           // refresh the list
                 // Server has to send the whole mapping of users along with the IPs                
                 oos.writeObject(this.mapping);                
