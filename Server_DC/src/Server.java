@@ -1,7 +1,5 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,8 +30,8 @@ import java.util.logging.Logger;
 public class Server {
     public HashMap mapping;
     public Map<String,Integer> conf_list;
-    public int Conf_ID = 1025;
-    public static int portNumber = 8000;
+    public int Conf_ID = 10000;
+    public static int portNumber = 8888;
     public Server()
     {
         this.conf_list = new HashMap();
@@ -69,14 +67,12 @@ public class Server {
 
     private void readCommand(Socket clientSocket) throws IOException, ClassNotFoundException
     {
-        DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
-        DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
+        ObjectInputStream ois = new ObjectInputStream(clientSocket.getInputStream());
+        ObjectOutputStream oos = new ObjectOutputStream(clientSocket.getOutputStream());
         //BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
         //BufferedReader br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         
-        ObjectOutputStream oos = new ObjectOutputStream(clientSocket.getOutputStream());
-        
-        String input = dis.readUTF();
+        String input = ois.readUTF();
         System.out.println(input + ";");
         switch(input.charAt(0))
         {
@@ -85,15 +81,15 @@ public class Server {
                 if(this.mapping.containsKey(nick))
                 {
                     // username already used
-                    dos.writeUTF("N");
-                    dos.flush();                    
+                    oos.writeUTF("N");
+                    oos.flush();                    
                 }
                 else
                 {
                     // add the username
                     this.mapping.put(nick, clientSocket.getInetAddress());
-                    dos.writeUTF("A");
-                    dos.flush();
+                    oos.writeUTF("A");
+                    oos.flush();
                     oos.writeObject(this.mapping);
                     oos.flush();
                     oos.writeObject(this.conf_list);
@@ -106,15 +102,15 @@ public class Server {
                 String ConfName = input.substring(1);
                 conf_list.put(ConfName, this.Conf_ID);                
                 String num = Integer.toString(Conf_ID);               
-                dos.writeInt(this.Conf_ID);
+                oos.writeInt(this.Conf_ID);
                 System.out.println(num);
-                dos.flush();
+                oos.flush();
                 this.Conf_ID++;
                 break;
             case 'J':
                 int id = (int)conf_list.get(input.substring(1));
-                dos.writeUTF(Integer.toString(id));
-                dos.flush();
+                oos.writeUTF(Integer.toString(id));
+                oos.flush();
             case 'R':           // refresh the list
                 // Server has to send the whole mapping of users along with the IPs                
                 oos.writeObject(this.mapping);                

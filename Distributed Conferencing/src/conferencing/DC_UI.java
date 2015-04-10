@@ -21,6 +21,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import java.net.*;
+import java.util.Enumeration;
 
 /**
  *
@@ -39,27 +40,30 @@ public class DC_UI extends javax.swing.JFrame {
 	public String nick_error3;
 	public String nick_error4;
 	static public String nick;
-    static public Map<String,Inet4Address> map;
-	static public Map<String,Integer> conf_list;
+	static public Map<String, Inet4Address> map;
+	static public Map<String, Integer> conf_list;
 	static public Inet4Address ip;
 	public static DC_UI ui;
 	/**
 	 * Creates new form DC_UI
 	 */
 	static ArrayList<Conference_Manager> conferences;
+
 	public DC_UI() {
 		this.nick_error1 = "* No Nickname given";
 		this.nick_error2 = "* Nickname should be within 25 characters";
 		this.nick_error3 = "* Nickname should be alphanumeric";
-		this.nick_error4 = "* Nickname already taken. Please choose a different username";
+		this.nick_error4 =
+			"* Nickname already taken. Please choose a different username";
 		/*Initialize global font here*/
-		ui_font = new Font("Tahoma",Font.PLAIN,12);
+		ui_font = new Font("Tahoma", Font.PLAIN, 12);
 		initComponents();
 		nick_error_label.setText("");
 		start_home();
-		
+
 		conferences = new ArrayList<Conference_Manager>();
 	}
+
 	/**
 	 * This method is called from within the constructor to initialize the form.
 	 * WARNING: Do NOT modify this code. The content of this method is always
@@ -340,16 +344,15 @@ public class DC_UI extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-	
-	private void start_home()
-	{
+
+	private void start_home() {
 		this.home_panel.setVisible(true);
 		this.work_panel.setVisible(false);
 		this.pack();
 	}
-	private void start_work()
-	{
-		this.home_panel.setVisible(false);                
+
+	private void start_work() {
+		this.home_panel.setVisible(false);
 		this.work_panel.setVisible(true);
 		this.pack();
 	}
@@ -362,67 +365,67 @@ public class DC_UI extends javax.swing.JFrame {
 		nick = this.nickname_text_field.getText();
 		Socket soc;
 		// testing
-		
+
 		//System.out.println("Nick : " + nick + ";");
-		if(nick.isEmpty())
-		{
+		if (nick.isEmpty()) {
 			//System.out.println("No NickName given!");
 			this.nick_error_label.setText(this.nick_error1);
 			return;
 		}
-		else if(nick.length() > 25)
-		{
+		else if (nick.length() > 25) {
 			//nickname should be less than 25 characters
 			this.nick_error_label.setText(this.nick_error2);
 			return;
 		}
-		else if(!nick.matches("[A-Za-z0-9]+"))
-		{
+		else if (!nick.matches("[A-Za-z0-9]+")) {
 			//nickname should be alpha numeric
 			this.nick_error_label.setText(this.nick_error3);
 			return;
 		}
-		try 
-		{
-			soc = new Socket(server_ip,server_port);
-			ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
-            ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
+		try {
+			soc = new Socket(server_ip, server_port);
+			ObjectOutputStream oos = new ObjectOutputStream(soc.
+				getOutputStream());
+			ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
 			oos.writeUTF("N" + nick);
 			oos.flush();
 			String line = ois.readUTF();
-			System.out.println("Line is :"+line);
-			if(line.equals("N"))
-			{
+			System.out.println("Line is :" + line);
+			if (line.equals("N")) {
 				// Reject
 //				this.nick_error_label.setText(this.nick_error4);
-				JOptionPane.showMessageDialog(this, "Choose a different username", "Username already taken", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this,
+					"Choose a different username", "Username already taken",
+					JOptionPane.ERROR_MESSAGE);
 				this.nickname_text_field.setText("");
 				return;
 			}
-			else
-			{
+			else {
 				// Accepted
 				this.nick_error_label.setText("");
 
 //				map = new HashMap<String,Inet4Address>();
 				map = (Map<String, Inet4Address>) ois.readObject();
-				conf_list = (Map<String,Integer>) ois.readObject();
-				DefaultListModel model = new DefaultListModel();                             
-
+				conf_list = (Map<String, Integer>) ois.readObject();
+				DefaultListModel model = new DefaultListModel();
 
 				int i = 0;
 				for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
-					if(!nick.equals(entry.getKey()))
+					if (!nick.equals(entry.getKey())) {
 						model.addElement(entry.getKey());
-					System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+					}
+					System.out.println("Key = " + entry.getKey() + ", Value = "
+						+ entry.getValue());
 				}
-				this.user_list.setModel(model);			
+				this.user_list.setModel(model);
 				this.start_work();
 			}
 			soc.close();
-		} catch (IOException ex) {
+		}
+		catch (IOException ex) {
 			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
-		} catch (ClassNotFoundException ex) {
+		}
+		catch (ClassNotFoundException ex) {
 			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
 		}
 		System.out.println("Registered!");
@@ -430,34 +433,38 @@ public class DC_UI extends javax.swing.JFrame {
 
 	private void refresh_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_refresh_btnActionPerformed
 		// TODO add your handling code here:
-		String send = "R"+ this.nick;
+		String send = "R" + this.nick;
 
 		try {
-			Socket soc = new Socket(server_ip,server_port);
-			ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+			Socket soc = new Socket(server_ip, server_port);
+			ObjectOutputStream oos = new ObjectOutputStream(soc.
+				getOutputStream());
 			oos.writeUTF(send);
 			oos.flush();
 			ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
-			map = new HashMap<String,Inet4Address>();            
+			map = new HashMap<String, Inet4Address>();
 			map = (Map<String, Inet4Address>) ois.readObject();
-			DefaultListModel model = new DefaultListModel();                             
+			DefaultListModel model = new DefaultListModel();
 			int i = 0;
 			for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
-				if(!nick.equals(entry.getKey()))
+				if (!nick.equals(entry.getKey())) {
 					model.addElement(entry.getKey());
-				System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+				}
+				System.out.println("Key = " + entry.getKey() + ", Value = "
+					+ entry.getValue());
 			}
-			this.user_list.setModel(model);                
-		} catch (IOException ex) {
+			this.user_list.setModel(model);
+		}
+		catch (IOException ex) {
 			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
-		} catch (ClassNotFoundException ex) {
+		}
+		catch (ClassNotFoundException ex) {
 			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
 		}
 	}//GEN-LAST:event_refresh_btnActionPerformed
-	
-	private int get_port_from_server(String name) throws IOException
-	{
-		Socket soc = new Socket(server_ip,server_port);
+
+	private int get_port_from_server(String name) throws IOException {
+		Socket soc = new Socket(server_ip, server_port);
 		ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
 		ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
 //		BufferedReader br = new BufferedReader(new InputStreamReader(soc.getInputStream()));
@@ -465,79 +472,89 @@ public class DC_UI extends javax.swing.JFrame {
 		oos.writeUTF("C" + name);
 		oos.flush();
 		System.out.println("Just Before read!!");
-		System.out.println("kuch :"+ois.readInt());
+		//System.out.println("kuch :"+ois.readInt());
 		return ois.readInt();
 	}
 	private void create_group_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_create_group_btnActionPerformed
 		// get list of selected users
 		// Get the index of all the selected items
-		Map<String,Inet4Address> mp = new HashMap<String,Inet4Address>();
+		Map<String, Inet4Address> mp = new HashMap<String, Inet4Address>();
 		int[] selectedIx = this.user_list.getSelectedIndices();
-		if(selectedIx.length == 0)
-		{
+		if (selectedIx.length == 0) {
 			// no user selected
-			JOptionPane.showMessageDialog(this, "No user selected", "Conference Creation Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "No user selected",
+				"Conference Creation Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		// Get all the selected items using the indices
-		for (int i = 0; i < selectedIx.length; i++)
-		{
-			String sel = (String) this.user_list.getModel().getElementAt(selectedIx[i]);
+		mp.put(nick, map.get(nick));
+		for (int i = 0; i < selectedIx.length; i++) {
+			String sel = (String) this.user_list.getModel().getElementAt(
+				selectedIx[i]);
 			mp.put(sel, map.get(sel));
 		}
 		// ask for conference name
 		String name;
-		while(true)
-		{
-			name = JOptionPane.showInputDialog(this, "Give a conference name","New Conference", JOptionPane.QUESTION_MESSAGE);
+		while (true) {
+			name = JOptionPane.showInputDialog(this, "Give a conference name",
+				"New Conference", JOptionPane.QUESTION_MESSAGE);
 			System.out.println("Name inputted :" + name);
-			if(name != null && !name.isEmpty())
+			if (name != null && !name.isEmpty()) {
 				break;
+			}
 		}
-		
+
 		// ask server for a new conference port
 		int port = 10000;
-		try 
-		{
+		try {
 			port = get_port_from_server(name);
 			System.out.println("Server Gave port : " + port);
 			// add a new conference panel to the tabs
-			conferences.add(new Conference_Manager(this,port,nick,name,mp));
+			conferences.add(new Conference_Manager(this, port, nick, name, mp));
 		}
-		catch (IOException ex)
-		{
+		catch (IOException ex) {
 			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
 		}
 	}//GEN-LAST:event_create_group_btnActionPerformed
-	
-	public void remove_conference(Conference_Manager c)
-	{
+
+	public void remove_conference(Conference_Manager c) {
 		this.conferences.remove(c);
 	}
+
 	/**
 	 * @param args the command line arguments
 	 */
-	public static void main(String args[]) throws IOException, ClassNotFoundException {
+	public static void main(String args[]) throws IOException,
+		ClassNotFoundException {
 		/* Set the Nimbus look and feel */
 		//<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
 		/* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
 		 * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
 		 */
 		try {
-			for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+			for (javax.swing.UIManager.LookAndFeelInfo info
+				: javax.swing.UIManager.getInstalledLookAndFeels()) {
 				if ("Nimbus".equals(info.getName())) {
 					javax.swing.UIManager.setLookAndFeel(info.getClassName());
 					break;
 				}
 			}
-		} catch (ClassNotFoundException ex) {
-			java.util.logging.Logger.getLogger(DC_UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-		} catch (InstantiationException ex) {
-			java.util.logging.Logger.getLogger(DC_UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-		} catch (IllegalAccessException ex) {
-			java.util.logging.Logger.getLogger(DC_UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-		} catch (javax.swing.UnsupportedLookAndFeelException ex) {
-			java.util.logging.Logger.getLogger(DC_UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+		}
+		catch (ClassNotFoundException ex) {
+			java.util.logging.Logger.getLogger(DC_UI.class.getName()).log(
+				java.util.logging.Level.SEVERE, null, ex);
+		}
+		catch (InstantiationException ex) {
+			java.util.logging.Logger.getLogger(DC_UI.class.getName()).log(
+				java.util.logging.Level.SEVERE, null, ex);
+		}
+		catch (IllegalAccessException ex) {
+			java.util.logging.Logger.getLogger(DC_UI.class.getName()).log(
+				java.util.logging.Level.SEVERE, null, ex);
+		}
+		catch (javax.swing.UnsupportedLookAndFeelException ex) {
+			java.util.logging.Logger.getLogger(DC_UI.class.getName()).log(
+				java.util.logging.Level.SEVERE, null, ex);
 		}
 		//</editor-fold>
 		/* Create and display the form */
@@ -547,49 +564,85 @@ public class DC_UI extends javax.swing.JFrame {
 				DC_UI.ui.setVisible(true);
 			}
 		});
-		
+
 		// start the server that listens for new conference request
 		ServerSocket serverSocket = new ServerSocket(DC_UI.req_port);
-		while(true){
-            System.out.println("waiting for conference");
-            Socket clientSocket = serverSocket.accept();
-            handleRequest(clientSocket);
-        }
+		while (true) {
+			System.out.println("waiting for conference");
+			Socket clientSocket = serverSocket.accept();
+			handleRequest(clientSocket);
+		}
 	}
 
-public static void handleRequest(Socket sock) throws IOException, ClassNotFoundException
-{
-	ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
-	ObjectInputStream ois = new ObjectInputStream(sock.getInputStream());
-	//read request form socket
-	String request = ois.readUTF();
-	String conference = request.substring(1);
-	if(JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Do you want to join conference "+conference,"Conference Join Request",JOptionPane.YES_NO_OPTION))
-	{
-		// send accept
-		oos.writeUTF("A");
-		int port = ois.readInt();
-		Map<String,Inet4Address> peers = (Map<String,Inet4Address>) ois.readObject();
-		// iterate on map and send peer request to everyone
-		for (Map.Entry<String, Inet4Address> entry : peers.entrySet())
-		{
-			Socket new_sock = new Socket(entry.getValue(),port);
-			ObjectOutputStream oos1 = new ObjectOutputStream(new_sock.getOutputStream());
-			oos1.writeUTF("P"+nick);
-//			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+	public static void handleRequest(Socket sock) throws IOException,
+		ClassNotFoundException {
+		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
+		ObjectInputStream ois = new ObjectInputStream(sock.getInputStream());
+		//read request form socket
+		String request = ois.readUTF();
+		String conference = request.substring(1, request.indexOf(":"));
+		int port = Integer.parseInt(request.substring(request.indexOf(":") + 1));
+		int response = JOptionPane.showConfirmDialog(null,"Do you want to join conference" + conference,"Conference Join Request", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
+		System.out.println(response + " " + JOptionPane.YES_OPTION);
+		if (response == JOptionPane.YES_OPTION) {
+			// send accept
+			System.out.println(sock.getInetAddress() + " : " + port + " "+ conference);
+			InetAddress temp1 = sock.getInetAddress();
+			sock.close();
+			Socket new_socket = new Socket(temp1, port);
+			System.out.println(sock.getInetAddress() + " : " + port + " "+ conference);
+			ObjectOutputStream oos1 = new ObjectOutputStream(new_socket.getOutputStream());
+			ObjectInputStream ois1 = new ObjectInputStream(new_socket.getInputStream());
+			oos1.writeUTF("A");
+			oos1.flush();
+			Map<String, Inet4Address> peers = (Map<String, Inet4Address>) ois1.readObject();
+			// iterate on map and send peer request to everyone
+			if (peers == null || peers.isEmpty()) {
+				System.out.println("Null or empty peers");
+			}
+			else {
+				for (Map.Entry<String, Inet4Address> entry : peers.entrySet()) {
+					Socket new_sock = new Socket(entry.getValue(), port);
+					ObjectOutputStream oos2 = new ObjectOutputStream(new_sock.getOutputStream());
+					oos2.writeUTF("P" + nick);
+					oos2.flush();
+					System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
+				}
+				// create a new conference manager
+				Enumeration e = NetworkInterface.getNetworkInterfaces();
+				InetAddress myaddress = InetAddress.getLocalHost();
+				int k = 0;
+				while (e.hasMoreElements()) {
+					NetworkInterface n = (NetworkInterface) e.nextElement();
+					Enumeration ee = n.getInetAddresses();
+
+					while (ee.hasMoreElements()) {
+						InetAddress i = (InetAddress) ee.nextElement();
+						if (k == 3) {
+							myaddress = (Inet4Address) i;
+						}
+						System.out.println(i.getHostAddress());
+						k++;
+					}
+				}
+				System.out.println("My address is : " + myaddress);
+				peers.put(nick, (Inet4Address) myaddress);
+				Conference_Manager temp = new Conference_Manager(ui, port, nick,conference);
+				temp.peers = peers;
+				temp.update_peers_list();
+				conferences.add(temp);
+			}
 		}
-		// create a new conference manager
-		Conference_Manager temp = new Conference_Manager(ui,port,nick,conference);
-		temp.peers = peers;
-		conferences.add(temp);
+		else {
+			// send reject
+			Socket new_socket = new Socket(sock.getInetAddress(), port);
+			ObjectOutputStream oos1 = new ObjectOutputStream(new_socket.getOutputStream());
+			ObjectInputStream ois1 = new ObjectInputStream(new_socket.getInputStream());
+			oos1.writeUTF("R");
+			oos1.flush();
+		}
 	}
-	else
-	{
-		// send reject
-		oos.writeUTF("R");
-	}
-}
-	
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     public javax.swing.JButton back_btn;
     public javax.swing.JButton close_btn;

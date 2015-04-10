@@ -60,9 +60,11 @@ public class Conference_Manager
 		//traverse on map and send conf request to all users in the map
 		for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
 			// create a socke and send message
+			if(entry.getKey() == user)
+				continue;
 			Socket soc = new Socket((InetAddress) entry.getValue(),DC_UI.req_port);
 			ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
-			oos.writeUTF("I"+name);
+			oos.writeUTF("I"+name+":"+port);
 			oos.flush();
 //			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
 		}
@@ -77,7 +79,7 @@ public class Conference_Manager
 		this.peers = new HashMap<String,Inet4Address>();
 		init_components();
 		this.receiver = new Conference_ReceiverThread(this);
-		
+		this.receiver.start();
 		// Initialize the list of sockets
 	}
 	
@@ -88,11 +90,12 @@ public class Conference_Manager
 		this.map = map;
 		this.peers = new HashMap<String,Inet4Address>();
 		this.name = name;
+		this.user = user;
 		init_components();
 		// add self to the peers list as initialization
 		peers.put(user,map.get(user));
 		this.receiver = new Conference_ReceiverThread(this);
-		
+		this.receiver.start();
 		send_requests();
 	}
 	
