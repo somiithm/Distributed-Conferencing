@@ -399,9 +399,9 @@ public class DC_UI extends javax.swing.JFrame {
 			return;
 		}
 		try {
+			System.out.println("Just before sending!!"+server_ip + ":" + server_port);
 			soc = new Socket(server_ip, server_port);
-			ObjectOutputStream oos = new ObjectOutputStream(soc.
-				getOutputStream());
+			ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
 			ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
 			oos.writeUTF("N" + nick);
 			oos.flush();
@@ -427,6 +427,10 @@ public class DC_UI extends javax.swing.JFrame {
 				for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
 					if (!nick.equals(entry.getKey())) {
 						model.addElement(entry.getKey());
+					}
+					else
+					{
+						ip = entry.getValue();
 					}
 					System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
 				}
@@ -467,6 +471,10 @@ public class DC_UI extends javax.swing.JFrame {
 				if (!nick.equals(entry.getKey())) {
 					model.addElement(entry.getKey());
 				}
+				else
+				{
+					ip = entry.getValue();
+				}
 				System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
 			}
 			this.user_list.setModel(model);
@@ -500,12 +508,19 @@ public class DC_UI extends javax.swing.JFrame {
 
     private void join_group_btnActionPerformed(java.awt.event.ActionEvent evt) throws IOException, ClassNotFoundException {
 		String conf_name = (String)this.conference_list.getSelectedValue();
+		if(conf_name == null || conf_name.isEmpty())
+		{
+			JOptionPane.showMessageDialog(null, "Select a conference you idiot!", "Error Joining Conference",JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 		int port = conf_list.get(conf_name);
 		// Send server a join message
+		System.out.println("joining "+conf_name+":"+port);
 		Socket soc = new Socket(server_ip, server_port);
 		ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
 		ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
-		oos.writeUTF("A"+conf_name);
+		oos.writeUTF("J"+conf_name);
+		oos.flush();
 		map = (Map<String, Inet4Address>) ois.readObject();
 		ArrayList<String> peers = (ArrayList<String>) ois.readObject();
 		DefaultListModel model = new DefaultListModel();
@@ -645,7 +660,7 @@ public class DC_UI extends javax.swing.JFrame {
 		String request = ois.readUTF();
 		String conference = request.substring(1, request.indexOf(":"));
 		int port = Integer.parseInt(request.substring(request.indexOf(":") + 1));
-		int response = JOptionPane.showConfirmDialog(null,"Do you want to join conference" + conference,"Conference Join Request", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
+		int response = JOptionPane.showConfirmDialog(null,"Do you want to join conference " + conference,"Conference Join Request", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
 		System.out.println(response + " " + JOptionPane.YES_OPTION);
 		if (response == JOptionPane.YES_OPTION) {
 			// send accept
@@ -669,7 +684,7 @@ public class DC_UI extends javax.swing.JFrame {
 					ObjectOutputStream oos2 = new ObjectOutputStream(new_sock.getOutputStream());
 					oos2.writeUTF("P" + nick);
 					oos2.flush();
-					System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
+					System.out.println("555Key = " + entry.getKey() + ", Value = "+ entry.getValue());
 				}
 				// create a new conference manager
 				peers.put(nick, ip);

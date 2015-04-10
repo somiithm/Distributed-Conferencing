@@ -37,6 +37,7 @@ public class Server {
     public Server()
     {
         this.conf_list = new HashMap();
+		this.conf_members = new HashMap<String, ArrayList<String> >();
         this.mapping = new HashMap();
     }
     public static void main(String args[]) throws IOException, ClassNotFoundException{
@@ -76,6 +77,7 @@ public class Server {
         
         String input = ois.readUTF();
 		String ConfName,UserName;
+		ArrayList<String> n;
         System.out.println(input + ";");
         switch(input.charAt(0))
         {
@@ -114,13 +116,17 @@ public class Server {
 				// convention A<ConfName>:<UserName>
                 ConfName = input.substring(1,input.indexOf(":"));
 				UserName = input.substring(input.indexOf(":")+1);
-				conf_members.get(ConfName).add(UserName);
+				n = conf_members.get(ConfName);
+				n.add(UserName);
+				conf_members.put(ConfName, n);
 				break;
 			case 'E':		// Exit from conference ConfName
 				// convention E<ConfName>:<UserName>
 				ConfName = input.substring(1,input.indexOf(":"));
 				UserName = input.substring(input.indexOf(":")+1);
-				conf_members.get(ConfName).remove(UserName);
+				n = conf_members.get(ConfName);
+				n.remove(UserName);
+				conf_members.put(ConfName, n);
 				if(conf_members.get(ConfName).isEmpty())
 				{
 					// Delete Conference From list
@@ -138,8 +144,8 @@ public class Server {
                 // Server has to send the whole mapping of users along with the IPs                
                 oos.writeObject(this.mapping);                
                 oos.flush();
-//                oos.writeObject(this.conf_list);
-//                oos.flush();
+                oos.writeObject(this.conf_list);
+                oos.flush();
                 break;             
         }                
         

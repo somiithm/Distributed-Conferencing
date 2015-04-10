@@ -135,15 +135,6 @@ public class Conference_Panel extends javax.swing.JPanel {
 
 	private void exit_btnActionPerformed(java.awt.event.ActionEvent evt) {
 		// We need to kill this conference from the GUI with asking first
-		if (JOptionPane.showConfirmDialog(null, "Are you sure you want to leave this Conference?", "Exit Conference", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION)
-		{
-			// Delete the Panel and exit
-
-		}
-		else
-		{
-			// Don't do anything
-		}
 	}
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
