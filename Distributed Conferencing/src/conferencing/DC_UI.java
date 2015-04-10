@@ -5,16 +5,23 @@
  */
 package conferencing;
 
+import static com.sun.org.apache.xalan.internal.lib.ExsltDynamic.map;
 import java.awt.Font;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.OutputStreamWriter;
+import java.net.Inet4Address;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.DefaultListModel;
+import javax.swing.JList;
 
 /**
  *
@@ -28,6 +35,7 @@ public class DC_UI extends javax.swing.JFrame {
 	public String nick_error2;
 	public String nick_error3;
 	public String nick_error4;
+        public Map<String,Inet4Address> map;
 	/**
 	 * Creates new form DC_UI
 	 */
@@ -335,7 +343,7 @@ public class DC_UI extends javax.swing.JFrame {
 	}
 	private void start_work()
 	{
-		this.home_panel.setVisible(false);
+		this.home_panel.setVisible(false);                
 		this.work_panel.setVisible(true);
 		this.pack();
 	}
@@ -369,12 +377,14 @@ public class DC_UI extends javax.swing.JFrame {
 			return;
 		}
 		try {
-			Socket soc = new Socket("10.141.212.64",8080);
+			Socket soc = new Socket("10.138.52.215",8888);
 			BufferedReader stdIn = new BufferedReader(new InputStreamReader(soc.getInputStream()));
 			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(soc.getOutputStream()));
+                        ObjectInputStream ois = new ObjectInputStream(soc.getInputStream());
 			bw.write("N" + nick + "\n" );
 			bw.flush();
 			String line = stdIn.readLine();
+                        System.out.println();
 			if(line.equals("NAK"))
 			{
 				// Reject
@@ -385,11 +395,24 @@ public class DC_UI extends javax.swing.JFrame {
 			{
 				// Accepted
 				this.nick_error_label.setText("");
-				// move to next UI page
+                                
+                                map = new HashMap<String,Inet4Address>();
+                                map = (Map<String, Inet4Address>) ois.readObject();
+                                DefaultListModel model = new DefaultListModel();                             
+                                
+                                
+                                int i = 0;
+                                for (Map.Entry<String, Inet4Address> entry : map.entrySet()) {
+                                    model.addElement(entry.getKey());
+                                    System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+                                }
+                                this.user_list.setModel(model);
 			}
 		} catch (IOException ex) {
 			Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
-		}
+		} catch (ClassNotFoundException ex) {
+                Logger.getLogger(DC_UI.class.getName()).log(Level.SEVERE, null, ex);
+            }
 		System.out.println("Registered!");
 	}//GEN-LAST:event_submit_btnActionPerformed
 

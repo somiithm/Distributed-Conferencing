@@ -32,7 +32,7 @@ public class Server {
     public static void main(String args[]) throws IOException{
         Server serv = new Server();
         serv.mapping = new HashMap();
-        int portNumber = 8080;
+        int portNumber = 8888;
         boolean run = true;
         ServerSocket serverSocket = new ServerSocket(portNumber);
         
@@ -64,6 +64,8 @@ public class Server {
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
         BufferedReader br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         
+        ObjectOutputStream oos = new ObjectOutputStream(clientSocket.getOutputStream());
+        
         String input = br.readLine();
         System.out.println(input + ";");
         switch(input.charAt(0))
@@ -74,7 +76,7 @@ public class Server {
                 {
                     // username already used
                     bw.write("NAK\n");
-                    bw.flush();
+                    bw.flush();                    
                 }
                 else
                 {
@@ -82,6 +84,8 @@ public class Server {
                     this.mapping.put(nick, clientSocket.getInetAddress());
                     bw.write("ACK\n");
                     bw.flush();
+                    oos.writeObject(this.mapping);
+                    //sending global list of users
                 }
                 break;
             case 'C':           // change nickname
@@ -93,7 +97,7 @@ public class Server {
                 break;
         }
         
-        //TODO: Send global list of users
+        
         
     }    
 }
