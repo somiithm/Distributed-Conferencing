@@ -15,8 +15,10 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 
@@ -34,16 +36,18 @@ public class Conference_Manager
 {
     Conference_Panel ui;
     DC_UI Main;
-	ArrayList<Socket> peers;
 	Map<String,Inet4Address> map;
+	Map<String,Inet4Address> peers;
 	String name;
+	String user;
 	int port;
+	Conference_ReceiverThread receiver;
 	
 	
 	private void init_components()
 	{
 		ui = new Conference_Panel();
-		this.Main.tabbed_pane.add(ui);
+		this.Main.tabbed_pane.add(name,ui);
 		ui.exit_btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt)
 			{
@@ -65,26 +69,45 @@ public class Conference_Manager
 //			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
 		}
 	}
-	Conference_Manager(DC_UI Main,int port,String name)
+	Conference_Manager(DC_UI Main,int port,String user,String name)
 	{
 		this.Main = Main;
 		this.port = port;
 		this.name = name;
+		this.user = user;
+		this.map = new HashMap<String,Inet4Address>();
+		this.peers = new HashMap<String,Inet4Address>();
 		init_components();
+		this.receiver = new Conference_ReceiverThread(this);
 		
 		// Initialize the list of sockets
 	}
 	
-	Conference_Manager(DC_UI Main,int port,String name,Map<String,Inet4Address> map) throws IOException
+	Conference_Manager(DC_UI Main,int port,String user,String name,Map<String,Inet4Address> map) throws IOException
 	{
 		this.Main = Main;
 		this.port = port;
 		this.map = map;
-		
+		this.peers = new HashMap<String,Inet4Address>();
 		init_components();
+		// add self to the peers list as initialization
+		peers.put(user,map.get(user));
+		this.receiver = new Conference_ReceiverThread(this);
+		
 		send_requests();
 	}
 	
+	// function that updates the UI
+	public void update_peers_list()
+	{
+		DefaultListModel model = new DefaultListModel();
+		int i = 0;
+		for (Map.Entry<String, Inet4Address> entry : this.peers.entrySet()) {
+			model.addElement(entry.getKey());
+//			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+		}
+		this.ui.peer_list.setModel(model);
+	}
 	public void leave()
 	{
 		

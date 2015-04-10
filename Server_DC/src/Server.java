@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  */
 public class Server {
     public HashMap mapping;
-    public HashMap conf_list;
+    public Map<String,Integer> conf_list;
     public int Conf_ID = 1025;
     public static int portNumber = 8000;
     public Server()
@@ -96,8 +96,8 @@ public class Server {
                     dos.flush();
                     oos.writeObject(this.mapping);
                     oos.flush();
-//                    oos.writeObject(this.conf_list);
-//                    oos.flush();
+                    oos.writeObject(this.conf_list);
+                    oos.flush();
                     //sending global list of users
                 }
                 break;

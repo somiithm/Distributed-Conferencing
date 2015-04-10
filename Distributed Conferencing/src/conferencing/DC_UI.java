@@ -40,9 +40,11 @@ public class DC_UI extends javax.swing.JFrame {
 	public String nick_error2;
 	public String nick_error3;
 	public String nick_error4;
-	public String nick;
+	static public String nick;
     static public Map<String,Inet4Address> map;
+	static public Map<String,Integer> conf_list;
 	static public Inet4Address ip;
+	public static DC_UI ui;
 	/**
 	 * Creates new form DC_UI
 	 */
@@ -405,8 +407,9 @@ public class DC_UI extends javax.swing.JFrame {
 				// Accepted
 				this.nick_error_label.setText("");
 
-				map = new HashMap<String,Inet4Address>();
+//				map = new HashMap<String,Inet4Address>();
 				map = (Map<String, Inet4Address>) ois.readObject();
+				conf_list = (Map<String,Integer>) ois.readObject();
 				DefaultListModel model = new DefaultListModel();                             
 
 
@@ -501,7 +504,7 @@ public class DC_UI extends javax.swing.JFrame {
 			port = get_port_from_server(name);
 			System.out.println("Server Gave port : " + port);
 			// add a new conference panel to the tabs
-			conferences.add(new Conference_Manager(this,port,name,mp));
+			conferences.add(new Conference_Manager(this,port,nick,name,mp));
 		}
 		catch (IOException ex)
 		{
@@ -516,7 +519,7 @@ public class DC_UI extends javax.swing.JFrame {
 	/**
 	 * @param args the command line arguments
 	 */
-	public static void main(String args[]) throws IOException {
+	public static void main(String args[]) throws IOException, ClassNotFoundException {
 		/* Set the Nimbus look and feel */
 		//<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
 		/* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -539,11 +542,11 @@ public class DC_UI extends javax.swing.JFrame {
 			java.util.logging.Logger.getLogger(DC_UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
 		}
 		//</editor-fold>
-		DC_UI ui = new DC_UI();
 		/* Create and display the form */
 		java.awt.EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				new DC_UI().setVisible(true);
+				DC_UI.ui = new DC_UI();
+				DC_UI.ui.setVisible(true);
 			}
 		});
 		
@@ -552,10 +555,44 @@ public class DC_UI extends javax.swing.JFrame {
 		while(true){
             System.out.println("waiting for conference");
             Socket clientSocket = serverSocket.accept();
-//            handlerequest(clientSocket);
+            handleRequest(clientSocket);
         }
 	}
 
+public static void handleRequest(Socket sock) throws IOException, ClassNotFoundException
+{
+	DataOutputStream dw = new DataOutputStream(sock.getOutputStream());
+	DataInputStream dr = new DataInputStream(sock.getInputStream());
+	ObjectInputStream ois = new ObjectInputStream(sock.getInputStream());
+	//read request form socket
+	String request = dr.readUTF();
+	String conference = request.substring(1);
+	if(JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Do you want to join conference "+conference,"Conference Join Request",JOptionPane.QUESTION_MESSAGE))
+	{
+		// send accept
+		dw.writeUTF("A");
+		int port = dr.readInt();
+		Map<String,Inet4Address> peers = (Map<String,Inet4Address>) ois.readObject();
+		// iterate on map and send peer request to everyone
+		for (Map.Entry<String, Inet4Address> entry : peers.entrySet())
+		{
+			Socket new_sock = new Socket(entry.getValue(),port);
+			DataOutputStream dw1 = new DataOutputStream(new_sock.getOutputStream());
+			dw1.writeUTF("P"+nick);
+//			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+		}
+		// create a new conference manager
+		Conference_Manager temp = new Conference_Manager(ui,port,nick,conference);
+		temp.peers = peers;
+		conferences.add(temp);
+	}
+	else
+	{
+		// send reject
+		dw.writeUTF("R");
+	}
+}
+	
     // Variables declaration - do not modify//GEN-BEGIN:variables
     public javax.swing.JButton back_btn;
     public javax.swing.JButton close_btn;
