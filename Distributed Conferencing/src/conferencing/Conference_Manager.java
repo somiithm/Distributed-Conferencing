@@ -55,14 +55,15 @@ public class Conference_Manager
 		ui.exit_btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt)
 			{
-				try {
+				try 
+				{
 					// event handling function
-                                    		// ask wanna really exit
-                                    if (JOptionPane.showConfirmDialog(null, "Do you really wanna quit this Conference?", "Exit Conference",JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
-                                    {   
-					delete_conference();
-                                    }
-                                }
+					// ask wanna really exit
+					if (JOptionPane.showConfirmDialog(null, "Do you really wanna quit this Conference?", "Exit Conference",JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
+					{   
+						delete_conference();
+					}
+				}
 				catch (IOException ex) {
 					Logger.getLogger(Conference_Manager.class.getName()).
 						log(Level.SEVERE, null, ex);
@@ -80,24 +81,27 @@ public class Conference_Manager
 	
 	private void send_chat()
 	{
-		for (Map.Entry<String, Inet4Address> entry : this.peers.entrySet()) {				
-			String msg = ui.chat_text_area.getText();
-			try {
-				System.out.println("Current Key = "+entry.getKey());
-				Socket soc = new Socket(entry.getValue(),port);
-				ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
-				Date date = new Date();
-				Calendar cal = Calendar.getInstance();
-				cal.setTime(date);
-				int hours = cal.get(Calendar.HOUR_OF_DAY);
-				int min = cal.get(Calendar.MINUTE);                                
-				oos.writeUTF("M"+hours+":"+min+":>"+user+": "+msg);
-				oos.flush();                                
-			} catch (IOException ex) {
-				Logger.getLogger(Conference_Manager.class.getName()).log(Level.SEVERE, null, ex);
+		synchronized(this.peers)
+		{
+			for (Map.Entry<String, Inet4Address> entry : this.peers.entrySet()) {				
+				String msg = ui.chat_text_area.getText();
+				try {
+					System.out.println("Current Key = "+entry.getKey());
+					Socket soc = new Socket(entry.getValue(),port);
+					ObjectOutputStream oos = new ObjectOutputStream(soc.getOutputStream());
+					Date date = new Date();
+					Calendar cal = Calendar.getInstance();
+					cal.setTime(date);
+					int hours = cal.get(Calendar.HOUR_OF_DAY);
+					int min = cal.get(Calendar.MINUTE);                                
+					oos.writeUTF("M"+hours+":"+min+":>"+user+": "+msg);
+					oos.flush();                                
+				} catch (IOException ex) {
+					Logger.getLogger(Conference_Manager.class.getName()).log(Level.SEVERE, null, ex);
+				}
 			}
+			ui.chat_text_area.setText("");
 		}
-		ui.chat_text_area.setText("");
 	}
 	private void send_requests() throws IOException
 	{
@@ -165,21 +169,27 @@ public class Conference_Manager
 	{
 		DefaultListModel model = new DefaultListModel();
 		int i = 0;
-		for (Map.Entry<String, Inet4Address> entry : this.peers.entrySet()) {
-			model.addElement(entry.getKey());
-//			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+		synchronized(this.peers)
+		{
+			for (Map.Entry<String, Inet4Address> entry : this.peers.entrySet()) {
+				model.addElement(entry.getKey());
+	//			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+			}
 		}
 		this.ui.peer_list.setModel(model);
 	}
 	public void leave() throws IOException
 	{
 		// Send remove request to all peers
-		for (Map.Entry<String, Inet4Address> entry : peers.entrySet()) {
-			System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
-			Socket new_sock = new Socket(entry.getValue(), port);
-			ObjectOutputStream oos2 = new ObjectOutputStream(new_sock.getOutputStream());
-			oos2.writeUTF("E" + user);
-			oos2.flush();
+		synchronized(this.peers)
+		{
+			for (Map.Entry<String, Inet4Address> entry : peers.entrySet()) {
+				System.out.println("Key = " + entry.getKey() + ", Value = "+ entry.getValue());
+				Socket new_sock = new Socket(entry.getValue(), port);
+				ObjectOutputStream oos2 = new ObjectOutputStream(new_sock.getOutputStream());
+				oos2.writeUTF("E" + user);
+				oos2.flush();
+			}
 		}
 	}
 	public void delete_conference() throws IOException

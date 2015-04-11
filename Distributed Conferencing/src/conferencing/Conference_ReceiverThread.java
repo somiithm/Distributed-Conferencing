@@ -43,8 +43,11 @@ public class Conference_ReceiverThread extends Thread
 				this.counter++;
 				// acknowledgement received join
 				// send the list of peers to the new guy
-				oos.writeObject(conf.peers);
-				oos.flush();
+				synchronized(conf.peers)
+				{
+					oos.writeObject(conf.peers);
+					oos.flush();
+				}
 				break;
 			case 'R':
 				this.counter++;
@@ -55,14 +58,20 @@ public class Conference_ReceiverThread extends Thread
 			case 'P':
 				// Add peer request
 				name = message.substring(1);
-				conf.peers.put(name, (Inet4Address) sock.getInetAddress());
-				conf.update_peers_list();
+				synchronized(conf.peers)
+				{
+					conf.peers.put(name, (Inet4Address) sock.getInetAddress());
+					conf.update_peers_list();
+				}
 				break;
 			case 'E':
 				// Exit peer request
 				name = message.substring(1);
-				conf.peers.remove(name);
-				conf.update_peers_list();
+				synchronized(conf.peers)
+				{
+					conf.peers.remove(name);
+					conf.update_peers_list();
+				}
 				break;
 			case 'M':
 			//display message
